@@ -1,0 +1,108 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   get_next_line.c                                    :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: tanselmo <tanselmo@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/01/24 12:58:53 by tanselmo          #+#    #+#             */
+/*   Updated: 2024/01/30 15:13:11 by tanselmo         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "get_next_line.h"
+
+static char	*ft_save_line(char *new_line)
+{
+	char	*aux;
+	int		i;
+	int		count;
+
+	i = 0;
+	if (!new_line)
+		return (NULL);
+	while (new_line[i] != '\n' && new_line[i])
+		i++;
+	if (!new_line[i])
+	{
+		free(new_line);
+		return (NULL);
+	}
+	aux = (char *)malloc(sizeof(char) * (ft_strlen(new_line) - i + 1));
+	if (!aux)
+		return (ft_free(new_line), NULL);
+	i += 1;
+	count = 0;
+	while (new_line[i])
+		aux[count++] = new_line[i++];
+	aux[count] = '\0';
+	return (ft_free(new_line), aux);
+}
+
+static char	*ft_copy_line(char *new_line)
+{
+	char	*line;
+	int		len;
+	int		i;
+
+	len = 0;
+	i = 0;
+	if (!new_line[i])
+		return (NULL);
+	while (new_line[i] && new_line[i++] != '\n')
+		len++;
+	line = (char *)malloc(sizeof(char) * (len + 2));
+	if (!line)
+		return (NULL);
+	i = 0;
+	while (new_line[i] != '\n' && new_line[i] != '\0')
+	{
+		line[i] = new_line[i];
+		i++;
+	}
+	if (new_line[i] == '\n')
+		line[i++] = '\n';
+	line[i] = '\0';
+	return (line);
+}
+
+static char	*ft_read_fd(int fd, char *new_line)
+{
+	char	*buffer;
+	int		bytes_read;
+
+	buffer = (char *)malloc(sizeof(char) * (BUFFER_SIZE + 1));
+	if (!buffer)
+		return (NULL);
+	bytes_read = 1;
+	if (!new_line)
+		new_line = ft_strdup("");
+	while (!ft_strchr(new_line, '\n') && bytes_read != 0)
+	{
+		bytes_read = read(fd, buffer, BUFFER_SIZE);
+		if (bytes_read == -1)
+		{
+			free(buffer);
+			return (ft_free(new_line), NULL);
+		}
+		buffer[bytes_read] = '\0';
+		new_line = ft_strjoin(buffer, new_line);
+	}
+	free(buffer);
+	return (new_line);
+}
+
+char	*get_next_line(int fd)
+{
+	static char	*new_line;
+	char		*line;
+
+	if (fd < 0 || BUFFER_SIZE <= 0)
+		return (ft_free(new_line), NULL);
+	new_line = ft_read_fd(fd, new_line);
+	if (!new_line)
+		return (NULL);
+	line = ft_copy_line(new_line);
+	new_line = ft_save_line(new_line);
+	return (line);
+}
